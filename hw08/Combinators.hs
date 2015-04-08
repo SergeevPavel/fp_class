@@ -100,8 +100,8 @@ angles = between (symbol '<') (symbol '>')
 
 -- (1 балл)
 foldr1P :: (a -> b -> a -> a) -> Parser lex a -> Parser lex b -> Parser lex a
-foldr1P fun p q = undefined 
+foldr1P fun p q = fun <$> p <*> q <*> ((foldr1P fun p q) <|> p)
 
 -- (1 балл)
 foldl1P :: (a -> b -> a -> a) -> Parser lex a -> Parser lex b -> Parser lex a
-foldl1P = undefined
+foldl1P fun p q = fun <$> ((foldl1P fun p q) <|> p) <*> q <*> p
