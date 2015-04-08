@@ -26,7 +26,7 @@ anySymbol = satisfy (\ _ -> True)
 
 -- (0.5 балла)
 digit :: Parser Char Int
-digit = digitToInt <$> satisfy (\c -> c >= '0' && c <= '9')
+digit = digitToInt <$> satisfy isDigit
 
 -- (0.5 балла)
 string :: (Eq lex) => [lex] -> Parser lex ()
@@ -34,7 +34,7 @@ string str = foldl1 (*>) (map symbol str)
 
 -- (0.5 балла)
 oneOf :: (Eq lex) => [lex] -> Parser lex lex
-oneOf syms = foldl1 (<|>) (map (\sym -> satisfy (\c -> sym == c)) syms)
+oneOf syms = foldl1 (<|>) (map (\sym -> satisfy (==sym)) syms)
 
 -- (0.5 балла)
 many :: Parser lex a -> Parser lex [a]
