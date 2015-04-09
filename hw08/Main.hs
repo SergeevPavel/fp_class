@@ -27,7 +27,7 @@ data Tree a b = Node (Tree a b) a (Tree a b) | Leaf b deriving (Show, Eq)
 
 -- (0.5 балла)
 treeP :: Parser Char a -> Parser Char b -> Parser Char (Tree a b)
-treeP = undefined
+treeP pa pb = (Leaf <$> pb) <|> ( angles (Node <$> (treeP pa pb) <*> (braces pa) <*> (treeP pa pb)) )
 
 main = fmap (const ()) $ runTestTT $ test
     $    label "pure"
