@@ -104,4 +104,4 @@ foldr1P fun p q = fun <$> p <*> q <*> ((foldr1P fun p q) <|> p)
 
 -- (1 балл)
 foldl1P :: (a -> b -> a -> a) -> Parser lex a -> Parser lex b -> Parser lex a
-foldl1P fun p q = undefined
+foldl1P fun p q = foldl (\acc (x, y) -> fun acc x y) <$> p <*> many ((,) <$> q <*> p)
