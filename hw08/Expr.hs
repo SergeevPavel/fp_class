@@ -89,12 +89,42 @@ isValid c = isOpSymbol c || isAlphaNum c || isSpace c || elem c "(){}"
 
 --------------------------------------------------
 -- Синтаксический анализ
+ 
+pBool :: Parser Lexeme Value
+pBool = (symbol (BoolConst True) *> (pure $ B True)) <|> (symbol (BoolConst False) *> (pure $ B False))
+
+pNum :: Parser Lexeme Int
+pNum = (\(NumberConst x) -> x) <$> (satisfy isNumLexeme)
+    where
+        isNumLexeme lex = case lex of NumberConst _ -> True
+                                      _             -> False
+
+pInt :: Parser Lexeme Value
+pInt = (I <$> pNum) <|> (I . negate <$> (symbol (BinOpSign Minus) *> pNum))
 
 pValue :: Parser Lexeme Value
-pValue = undefined
+pValue = pBool <|> pInt
+
+pConst :: Parser Lexeme Expr
+pConst = Const <$> pValue
+
+pVar :: Parser Lexeme Expr
+pVar = (\(Ident name) -> Var name) <$> (satisfy isIdentLexeme)
+    where
+        isIdentLexeme lex = case lex of Ident _ -> True
+                                        _       -> False
+
+pUnOp :: Parser Lexeme Expr
+pUnOp = UnOp <$> ((symbol (BinOpSign Minus) *> pure Neg) <|> (symbol NotKeyword *> pure Not)) <*> pExpr
+
+pIf :: Parser Lexeme Expr
+pIf = (\_ cond _ th _ el -> If cond th el) <$> symbol IfKeyword <*> pExpr <*> symbol ThenKeyword <*> pExpr <*> symbol ElseKeyword <*> pExpr
+
+pMul :: Parser Lexeme Expr
+pMul = (\l _ r -> BinOp Mul l r) <$> pExpr <*> symbol (BinOpSign Mul) <*> pExpr
 
 pExpr :: Parser Lexeme Expr
-pExpr = undefined
+pExpr = pConst <|> pVar <|> pUnOp <|> pIf
 
 pStatement :: Parser Lexeme Statement
 pStatement = undefined
