@@ -120,11 +120,35 @@ pUnOp = UnOp <$> ((symbol (BinOpSign Minus) *> pure Neg) <|> (symbol NotKeyword 
 pIf :: Parser Lexeme Expr
 pIf = (\_ cond _ th _ el -> If cond th el) <$> symbol IfKeyword <*> pExpr <*> symbol ThenKeyword <*> pExpr <*> symbol ElseKeyword <*> pExpr
 
-pMul :: Parser Lexeme Expr
-pMul = (\l _ r -> BinOp Mul l r) <$> pExpr <*> symbol (BinOpSign Mul) <*> pExpr
+pMul :: Parser Lexeme BinOp
+pMul = symbol (BinOpSign Mul) *> pure Mul
+
+pUnit :: Parser Lexeme Expr
+pUnit =  (Const <$> pValue) <|> pVar <|> pUnOp <|> pIf <|> between (symbol LPSign) (symbol RPSign) pExpr
+
+pProduct :: Parser Lexeme Expr
+pProduct = foldl1P (\left op right -> BinOp op left right) pUnit pMul
+
+pPlus :: Parser Lexeme BinOp
+pPlus = symbol (BinOpSign Plus) *> pure Plus
+
+pMinus :: Parser Lexeme BinOp
+pMinus = symbol (BinOpSign Minus) *> pure Minus
+
+pSum :: Parser Lexeme Expr
+pSum = foldl1P (\left op right -> BinOp op left right) pProduct (pPlus <|> pMinus)
+
+pLess :: Parser Lexeme BinOp
+pLess = symbol (BinOpSign Less) *> pure Less
+
+pGreater :: Parser Lexeme BinOp
+pGreater = symbol (BinOpSign Greater) *> pure Greater
+
+pEquals :: Parser Lexeme BinOp
+pEquals = symbol (BinOpSign Equals) *> pure Equals
 
 pExpr :: Parser Lexeme Expr
-pExpr = pConst <|> pVar <|> pUnOp <|> pIf
+pExpr = foldl1P (\left op right -> BinOp op left right) pSum (pLess <|> pGreater <|> pEquals)
 
 pStatement :: Parser Lexeme Statement
 pStatement = undefined
