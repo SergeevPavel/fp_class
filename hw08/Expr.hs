@@ -108,11 +108,14 @@ pValue = pBool <|> pInt
 pConst :: Parser Lexeme Expr
 pConst = Const <$> pValue
 
-pVar :: Parser Lexeme Expr
-pVar = (\(Ident name) -> Var name) <$> (satisfy isIdentLexeme)
+pIdent :: Parser Lexeme String
+pIdent = (\(Ident str) -> str) <$> (satisfy isIdentLexeme)
     where
         isIdentLexeme lex = case lex of Ident _ -> True
                                         _       -> False
+
+pVar :: Parser Lexeme Expr
+pVar = Var <$> pIdent
 
 pUnOp :: Parser Lexeme Expr
 pUnOp = UnOp <$> ((symbol (BinOpSign Minus) *> pure Neg) <|> (symbol NotKeyword *> pure Not)) <*> pExpr
@@ -150,8 +153,17 @@ pEquals = symbol (BinOpSign Equals) *> pure Equals
 pExpr :: Parser Lexeme Expr
 pExpr = foldl1P (\left op right -> BinOp op left right) pSum (pLess <|> pGreater <|> pEquals)
 
+pAssign :: Parser Lexeme Statement
+pAssign = (\ident _ expr -> Assign ident expr) <$> pIdent <*> (symbol AssignmentSign) <*> pExpr <* (symbol SemicolonSign)
+
+pWhile :: Parser Lexeme Statement
+pWhile = symbol WhileKeyword *> (While <$> pExpr <*> pStatement)
+
+pCompound :: Parser Lexeme Statement
+pCompound = (symbol LBSign) *> (Compound <$> many pStatement) <* (symbol RBSign)
+
 pStatement :: Parser Lexeme Statement
-pStatement = undefined
+pStatement = pAssign <|> pWhile <|> pCompound
 
 -- tests
 
@@ -168,7 +180,7 @@ testsExpr = [ parserTestOK pExpr (lexer "123 * x")                 === (int 123 
 
 testsStatement = [ parserTestOK pStatement (lexer "x := 3;")                                                   === ("x" @= int 3, [])
                  , parserTestOK pStatement (lexer "while (x > 0) x := x - 1;")                                 === (While (Var "x" .> int 0) $ "x" @= Var "x" .- int 1, [])
-                 , parserTestOK pStatement (lexer "r := 1; i := 0; while (i < n) { i := i + 1; r := r * i; }") === (fac, [])
+                 , parserTestOK pStatement (lexer "{r := 1; i := 0; while (i < n) { i := i + 1; r := r * i; }}") === (fac, [])
                  ]
   where
     fac = Compound
