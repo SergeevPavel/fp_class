@@ -18,13 +18,19 @@ tree2r = Node ("a",1) (Node ("q",0) Leaf Leaf) (Node ("x",3) (Node ("s",2) Leaf 
 -- 2. Напишите while.
 -- (1 балл)
 while :: Monad m => m Bool -> m a -> m [a]
-while = undefined
+while cond body = do
+    t <- cond
+    if t then do
+        x  <- body
+        xs <- while cond body
+        return (x:xs)
+    else
+        return []
 
 fac :: Int -> IO [Int]
 fac n = do
     i <- newIORef 0
     r <- newIORef 1
-    return ()
     while (readIORef i >>= \i' -> return $ i' < n) $ do
         r' <- readIORef r
         i' <- readIORef i
