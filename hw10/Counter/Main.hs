@@ -3,14 +3,32 @@ import Counter
 
 -- Эти две функции отличаются от обычных тем, что, вызывая tick, они считают сколько шагов заняло их выполнение.
 filter' :: (a -> Bool) -> [a] -> Counter [a]
-filter' = undefined
+filter' _    []     = return []
+filter' cond (x:xs) = do
+    tick
+    if cond x then do
+        xs' <- filter' cond xs
+        return (x:xs')
+    else
+        filter' cond xs
 
 append :: [a] -> [a] -> Counter [a]
-append = undefined
+append []     ys = return ys
+append (x:xs) ys = do
+    tick
+    ys' <- append xs ys
+    return (x:ys')
 
 -- Реализуйте qsort через filter' и append
 qsort :: Ord a => [a] -> Counter [a]
-qsort = undefined
+qsort [] = return []
+qsort (x:xs) = do
+    left  <- filter' (<= x) xs
+    right <- filter' (>  x) xs
+    left'  <- qsort left
+    right' <- qsort right
+    temp <- append [x] right'
+    append left' temp
 
 -- Первый вызов должен занимать большее количество тиков ~ в 2 раза
 main = do
