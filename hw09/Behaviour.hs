@@ -27,6 +27,8 @@ executeRequest (Put output) = do
     putStrLn output
     return OK
 
+-- !!! А без unsafePerformIO?
+
 runBehaviour :: Behaviour -> IO ()
 runBehaviour behaviour = do
     let responses = map (unsafePerformIO . executeRequest) . behaviour $ responses
