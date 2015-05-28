@@ -71,7 +71,11 @@ evalStatement (Compound stats) = forM_ stats evalStatement
 evalStatement (While expr stat) = do
     cond <- getBool $ evalExpr expr
     when cond $ evalStatement stat >> evalStatement (While expr stat)
---evalStatement
+evalStatement (If expr tstat mestat) = do
+    cond <- getBool $ evalExpr expr
+    if cond then evalStatement tstat
+            else fromMaybe mzero (fmap evalStatement mestat)
+
 
 
 ------------------------------------------------------------------------------------------------
