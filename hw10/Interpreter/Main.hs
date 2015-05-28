@@ -2,6 +2,7 @@
 {-# LANGUAGE TupleSections #-}
 
 import Control.Monad
+import Data.Maybe
 import qualified Data.Map as M
 import Test.HUnit
 
@@ -9,19 +10,69 @@ import Expr
 import Eval
 
 getInt :: Eval Value -> Eval Integer
-getInt m = undefined
+getInt m = m >>= \v -> case v of I i -> return i
+                                 _   -> fail "not integer type"
 
 getBool :: Eval Value -> Eval Bool
-getBool m = undefined
+getBool m = m >>= \v -> case v of B b -> return b
+                                  _   -> fail "not boolean type"
 
 if' :: Eval Value -> Eval () -> Maybe (Eval ()) -> Eval ()
-if' c t e = undefined
+if' c t e = do
+    cond <- getBool c
+    if cond then t
+            else fromMaybe mzero e
 
 evalExpr :: Expr -> Eval Value
-evalExpr = undefined
+evalExpr (Const val) = return val
+evalExpr (Var str) = getVar str
+evalExpr (BinOp Plus left right) = do
+    l <- getInt $ evalExpr left
+    r <- getInt $ evalExpr right
+    return $ I $ l + r
+evalExpr (BinOp Minus left right) = do
+    l <- getInt $ evalExpr left
+    r <- getInt $ evalExpr right
+    return $ I $ l - r
+evalExpr (BinOp Mul left right) = do
+    l <- getInt $ evalExpr left
+    r <- getInt $ evalExpr right
+    return $ I $ l * r
+evalExpr (BinOp And left right) = do
+    l <- getBool $ evalExpr left
+    r <- getBool $ evalExpr right
+    return $ B $ l && r
+evalExpr (BinOp Or left right) = do
+    l <- getBool $ evalExpr left
+    r <- getBool $ evalExpr right
+    return $ B $ l || r
+evalExpr (BinOp Less left right) = do
+    l <- getInt $ evalExpr left
+    r <- getInt $ evalExpr right
+    return $ B $ l < r
+evalExpr (BinOp Greater left right) = do
+    l <- getInt $ evalExpr left
+    r <- getInt $ evalExpr right
+    return $ B $ l > r
+evalExpr (BinOp Equals left right) = do
+    l <- getInt $ evalExpr left
+    r <- getInt $ evalExpr right
+    return $ B $ l == r
+evalExpr (UnOp Neg nest) = do
+    n <- getInt $ evalExpr nest
+    return $ I $ negate n
+evalExpr (UnOp Not nest) = do
+    n <- getBool $ evalExpr nest
+    return $ B $ not n
 
 evalStatement :: Statement -> Eval ()
-evalStatement = undefined
+evalStatement (Assign str expr) = evalExpr expr >>= (update str)
+evalStatement (Compound stats) = forM_ stats evalStatement
+evalStatement (While expr stat) = do
+    cond <- getBool $ evalExpr expr
+    when cond $ evalStatement stat >> evalStatement (While expr stat)
+--evalStatement
+
 
 ------------------------------------------------------------------------------------------------
 -- tests

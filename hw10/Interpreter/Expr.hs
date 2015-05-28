@@ -98,4 +98,4 @@ instance Show Statement where
         pretty (If c t (Just e)) = if_then c t <+> text "else" <+> pretty e
         pretty (While c b) = text "while" <+> parens (text (show c)) $$ pretty b
         pretty (Assign v e) = text v <+> equals <+> text (show e) <> semi
-        pretty (Compound ss) = vcat [lbrace, nest 4 $ vcat (map pretty ss), rbrace] 
+        pretty (Compound ss) = vcat [lbrace, nest 4 $ vcat (map pretty ss), rbrace]
